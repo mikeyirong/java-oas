@@ -79,7 +79,7 @@
 				collapsible="true" bodyBorder="0 1 0 0">
 				<aos:layout type="vbox" align="stretch" />
 				<aos:formpanel id="templateForm" layout="column" labelWidth="70"
-					border="false" height="120">
+					border="false" height="200">
 					<aos:combobox id="templateName" name="name" width="300"
 						fieldLabel="订单状态" columnWidth="0.9">
 						<aos:option value="PLACE_ORDER_SUCCESS" display="等待买家付款" />
