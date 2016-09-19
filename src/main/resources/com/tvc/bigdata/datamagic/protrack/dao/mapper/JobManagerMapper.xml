@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="JobManager">
+
+	<!-- 查询任务列表 -->
+	<select id="joblistPage" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id,
+		t.job_name,
+		date_format(t.time_out,'%Y-%m-%d') as time_out,
+		z.name_ as job_user,
+		t.status,
+		date_format(t.create_at,'%Y-%m-%d') as
+		create_at,
+		m.name_ as master,
+		t.sku
+		FROM b2c_job t
+		INNER JOIN aos_sys_user
+		z
+		ON t.job_user
+		=
+		z.id_
+		inner join aos_sys_user m
+		on m.id_ = t.master
+		WHERE
+		1 = 1
+		<if test="job_name != null and job_name != ''">
+			and t.job_name like '%${job_name}%'
+		</if>
+		<if test="sku != null and sku != ''">
+			and t.sku = #{sku}
+		</if>
+		<if test="job_id != null and job_id != ''">
+			and t.job_id like '%${job_id}%'
+		</if>
+		<if test="status != null and status != ''">
+			and t.status = #{status}
+		</if>
+		<if test="job_user != null and job_user != ''">
+			and t.job_user = #{job_user}
+		</if>
+		<if test="master != null and master != ''">
+			and t.master = #{master}
+		</if>
+		order by t.status,t.time_out,t.create_at desc
+
+	</select>
+
+	<!-- 通过sku号获取信息 -->
+	<select id="joblistforsku" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id,
+		t.job_name,
+		date_format(t.time_out,'%Y-%m-%d') as time_out,
+		z.name_ as job_user,
+		t.status,
+		date_format(t.create_at,'%Y-%m-%d') as
+		create_at,
+		m.name_ as master,
+		t.sku
+		FROM b2c_job t
+		INNER JOIN aos_sys_user
+		z
+		ON t.job_user
+		=
+		z.id_
+		inner join aos_sys_user m
+		on m.id_ = t.master
+		WHERE
+		1 = 1
+		and t.sku=#{sku}
+	</select>
+
+	<!-- 查询sku是重复 -->
+	<select id="isskurepetition" resultType="Dto" parameterType="Dto">
+		select *
+		from b2c_job
+		where 1=1
+		and sku =#{sku}
+		limit 0,1
+	</select>
+
+	<!-- 通过job_id获得job_name -->
+	<select id="jobnameget" resultType="Dto" parameterType="Dto">
+		SELECT
+		id,
+		job_name,
+		job_user,
+		time_out,
+		c.name_ as job_username,
+		b.name_ as
+		master,
+		a.master as
+		master_id,
+		a.status,
+		create_at,
+		a.sku
+		FROM b2c_job a
+		INNER JOIN aos_sys_user b
+		on
+		a.master
+		= b.id_
+		INNER JOIN aos_sys_user c
+		on
+		a.job_user = c.id_
+		WHERE 1=1
+		<if test="job_id !=null">
+			AND id = #{job_id}
+		</if>
+	</select>
+
+	<select id="selectJobListById" resultType="Dto" parameterType="Dto">
+		SELECT
+		id,
+		job_id,
+		particulars,
+		consignor,
+		status,
+		create_at,
+		accessory
+		FROM
+		b2c_job_list
+		WHERE id = #{joblist_id}
+	</select>
+
+	<!-- 查询是否有重复的任务 -->
+	<select id="isPagname" resultType="Dto" parameterType="Dto">
+		SELECT
+		*
+		FROM b2c_job t
+		WHERE 1=1
+		<if test="job_name != null and job_name != ''">
+			and t.job_name = #{job_name}
+		</if>
+		<if test="id != null and id != ''">
+			and t.id != #{id}
+		</if>
+		LIMIT 0, 1
+	</select>
+
+
+	<!-- 插入任务Activity -->
+
+	<insert id="createActivity" parameterType="Dto">
+		INSERT INTO
+		b2c_job_list
+		( job_id,
+		particulars,
+		status,
+		create_at,
+		consignor,
+		accessory,
+		updown_user
+		)
+		VALUES (
+		#{job_id,jdbcType=VARCHAR},
+		#{particulars,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{create_at,jdbcType=VARCHAR},
+		#{consignor,jdbcType=VARCHAR},
+		#{accessory,jdbcType=VARCHAR},
+		#{updown_user,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 修改状态job status -->
+	<update id="updatestatusjob" parameterType="Dto">
+		update b2c_job
+		<set>
+			<if test="status != null">
+				status=#{status,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where 1=1
+		<if test="job_id != null">
+			and id=#{job_id,jdbcType=VARCHAR}
+		</if>
+	</update>
+
+	<!-- 插入任务表数据 -->
+	<insert id="insertjob" parameterType="Dto">
+		INSERT INTO b2c_job
+		(job_name, time_out, job_user,master, create_at,sku)
+		VALUES (
+		#{job_name,jdbcType=VARCHAR},
+		#{time_out,jdbcType=VARCHAR},
+		#{job_user,jdbcType=VARCHAR},
+		#{master,jdbcType=VARCHAR},
+		#{create_at,jdbcType=VARCHAR},
+		#{sku,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 更新任务表数据 -->
+	<update id="updatejob" parameterType="Dto">
+		update b2c_job
+		<set>
+			<if test="job_name != null">
+				job_name=#{job_name,jdbcType=VARCHAR},
+			</if>
+			<if test="time_out != null">
+				time_out=#{time_out,jdbcType=TIMESTAMP},
+			</if>
+			<if test="job_user != null">
+				job_user=#{job_user,jdbcType=VARCHAR},
+			</if>
+			<if test="status != null">
+				status=#{status,jdbcType=VARCHAR},
+			</if>
+			<if test="sku != null">
+				sku=#{sku,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where 1=1
+		<if test="id != null">
+			and id=#{id,jdbcType=VARCHAR}
+		</if>
+	</update>
+
+	<!-- 列出任务详情 -->
+	<select id="joblistinformation" resultType="Dto" parameterType="Dto">
+		SELECT
+		b.id,
+		b.job_id,
+		a.job_name,
+		d.name_ as job_user,
+		a.time_out,
+		b.particulars,
+		b.accessory,
+		a.sku,
+		a.status,
+		b.create_at,
+		c.name_ as
+		consignor,
+		e.name_ as updown_name
+		FROM b2c_job a
+		INNER JOIN b2c_job_list
+		b
+		ON a.id =
+		b.job_id
+		INNER JOIN
+		aos_sys_user c
+		ON b.consignor = c.id_
+		INNER
+		JOIN
+		aos_sys_user d
+		on
+		a.job_user = d.id_
+		INNER JOIN aos_sys_user e
+		on
+		b.updown_user = e.id_
+		where 1=1
+		<if test="job_id !=null and job_id !=''">
+			and b.job_id = #{job_id}
+		</if>
+		<if test="job_user !=null and job_user !=''">
+			and a.job_user = #{job_user}
+		</if>
+		<if test="consignor !=null and consignor !=''">
+			and b.consignor = #{consignor}
+		</if>
+		order by b.create_at desc
+	</select>
+
+	<!-- 列出任务详情 -->
+	<select id="llalljob" resultType="Dto" parameterType="Dto">
+		select
+		id as
+		value,
+		job_name as display
+		from b2c_job
+		where 1=1
+		<if test="job_id != null and job_id !=''">
+			and id = #{job_id}
+		</if>
+	</select>
+
+	<!-- 插入任务详情 -->
+	<select id="insertjobinformation" resultType="Dto"
+		parameterType="Dto">
+		INSERT INTO b2c_job_list
+		( job_id, particulars,
+		status,create_at,consignor)
+		VALUES (
+		#{job_name,jdbcType=VARCHAR},
+		#{particulars,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{create_at,jdbcType=VARCHAR},
+		#{consignor,jdbcType=VARCHAR}
+		)
+	</select>
+
+	<!-- 查询用户 -->
+	<select id="llalluser" resultType="Dto" parameterType="Dto">
+		select
+		a.id_
+		as
+		value,
+		a.name_ as display
+		from aos_sys_user a
+		INNER JOIN
+		aos_sys_org b on
+		a.org_id_ =
+		b.id_
+		where 1=1
+		<if test="org_name !=null and org_name != '' ">
+			and b.name_=#{org_name}
+		</if>
+
+	</select>
+
+	<!-- 随机产生一个用户 -->
+	<select id="listrandomuser" resultType="Dto" parameterType="Dto">
+		select
+		a.id_
+		from aos_sys_user a
+		INNER JOIN
+		aos_sys_org b on a.org_id_ =
+		b.id_
+		where 1=1
+		<if test="org_name !=null and org_name != '' ">
+			and b.name_=#{org_name}
+		</if>
+		ORDER BY RAND() LIMIT 1
+	</select>
+
+	<!-- 根据查询责任人 -->
+	<select id="lluserjob" resultType="Dto" parameterType="Dto">
+		select
+		distinct
+		a.id_
+		as
+		value,
+		a.name_ as display
+		from aos_sys_user a
+		INNER JOIN
+		b2c_job b
+		on a.id_ = b.job_user
+		where 1=1
+	</select>
+
+	<!-- 根据查询管理人 -->
+	<select id="llusermanager" resultType="Dto" parameterType="Dto">
+		select
+		distinct
+		a.id_
+		as
+		value,
+		a.name_ as display
+		from aos_sys_user a
+		INNER
+		JOIN b2c_job b
+		on a.id_ = b.master
+		where 1=1
+	</select>
+
+	<!-- 查询任务详情 -->
+	<update id="jobinformation_status" parameterType="Dto">
+		UPDATE b2c_job_list
+		<set>
+			<if test="status!=null ">
+				status = #{status}
+			</if>
+		</set>
+		WHERE 1=1
+		<if test="id!=null">
+			and id=#{id}
+		</if>
+	</update>
+
+	<!-- 姓名表通过id获取名字 -->
+	<select id="getusername" resultType="Dto" parameterType="Dto">
+		SELECT
+		name_
+		FROM aos_sys_user
+		WHERE id_ = #{id}
+	</select>
+
+	<!-- 获取责任人与委托人 -->
+	<select id="list_consignor_jobuser" resultType="Dto"
+		parameterType="Dto">
+		SELECT
+		t.id,
+		t.consignor,
+		z.job_user,
+		x.name_ as consignor_name,
+		y.name_ as
+		job_user_name
+		FROM b2c_job_list t
+		INNER JOIN b2c_job
+		z
+		ON t.job_id = z.id
+		INNER JOIN aos_sys_user x
+		on x.id_ =t.consignor
+		INNER JOIN aos_sys_user
+		y
+		on y.id_ = z.job_user
+		where 1=1
+		<if test="id !=null and id != ''">
+			and t.id=#{id}
+		</if>
+	</select>
+
+	<!-- 更新任务详情数据 -->
+	<update id="updatejobinformation" parameterType="Dto">
+		update b2c_job_list
+		<set>
+			<if test="particulars != null">
+				particulars=#{particulars},
+			</if>
+			<if test="consignor != null">
+				consignor=#{consignor},
+			</if>
+			<if test="accessory != null">
+				accessory=#{accessory},
+			</if>
+		</set>
+		where 1=1
+		<if test="id != null and id != ''">
+			and id =#{id}
+		</if>
+		<if test="jobinformation_id !=null">
+			and id =#{jobinformation_id}
+		</if>
+	</update>
+
+	<!-- 查询状态 -->
+	<select id="listinforamtiongroup" resultType="Dto"
+		parameterType="Dto">
+		select s.job_id,s.consignor,
+		sum(CASE when s.status=0 then s.number
+		else 0 end) as s0,
+		sum(CASE when s.status=1 then s.number else 0 end)
+		as s1,
+		sum(CASE when s.status=2 then s.number else 0 end) as s2
+		from (
+		SELECT
+		a.job_name as job_id,
+		c.name_ AS consignor,
+		b.status,
+		COUNT(*) as
+		number
+
+		FROM b2c_job a
+		INNER JOIN b2c_job_list b
+		ON a.id = b.job_id
+		INNER
+		JOIN aos_sys_user c
+		ON b.consignor = c.id_
+		WHERE 1 = 1
+		<if test="job_id !=null and job_id !=''">
+			and b.job_id = #{job_id}
+		</if>
+		<if test="job_user !=null and job_user !=''">
+			and a.job_user = #{job_user}
+		</if>
+		<if test="consignor !=null and consignor !=''">
+			and b.consignor = #{consignor}
+		</if>
+		GROUP BY c.name_,
+		b.status,
+		b.job_id
+		) as s group by s.job_id,s.consignor
+	</select>
+
+</mapper>

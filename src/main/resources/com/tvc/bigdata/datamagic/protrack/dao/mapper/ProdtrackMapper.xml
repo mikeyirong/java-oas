@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Prodtrack">
+
+	<!-- 查询平台信息 -->
+	<select id="listPlatformsPage" resultType="Dto" parameterType="Dto">
+		select
+		t1.id as id,
+		t1.name as name,
+		t1.principal as principal,
+		t2.name_
+		as principal_name,
+		t1.createdAt as createdAt,
+		t1.description as
+		description,
+		t1.online as online,
+		t1.platformUrl as platformUrl
+		from
+		b2c_platform as t1
+		inner join
+		aos_sys_user as t2
+		on t2.id_ = t1.principal
+		where 1=1
+		<if test="name != null and name != ''">
+			and t1.name like '%${name}%'
+		</if>
+		<if test="id != null and id != ''">
+			and t1.id = '${id}'
+		</if>
+		<if test="platformUrl != null and platformUrl != ''">
+			and t1.platformUrl like '%${platformUrl}%'
+		</if>
+		<if test="status != null and status != ''">
+			and t1.online = '${status}'
+		</if>
+
+	</select>
+
+
+
+	<!-- 更新平台 -->
+	<update id="updatePlatformByKey" parameterType="Dto">
+		UPDATE b2c_platform
+		<set>
+			<if test="id != null">
+				id = #{id, jdbcType=VARCHAR},
+			</if>
+			<if test="name != null">
+				name = #{name, jdbcType=VARCHAR},
+			</if>
+			<if test="description != null">
+				description = #{description, jdbcType=VARCHAR},
+			</if>
+			<if test="online != null">
+				online = #{online, jdbcType=INTEGER}
+			</if>
+			<if test="platformUrl != null">
+				platformUrl = #{platformUrl, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 添加平台 -->
+	<insert id="insertPlatform" parameterType="Dto">
+	<![CDATA[
+		insert into
+		b2c_platform (
+		id,
+		name,
+		description,
+		principal,
+		createdAt,
+		online,
+		platformUrl
+		)
+		values (
+		#{id, jdbcType=VARCHAR},
+		#{name,jdbcType=VARCHAR},
+		#{description,jdbcType=VARCHAR},
+		#{principal,jdbcType=VARCHAR},
+		#{createdAt,jdbcType=VARCHAR},
+		#{online,jdbcType=INTEGER},
+		#{platformUrl,jdbcType=VARCHAR}
+		)
+	  ]]>
+	</insert>
+
+
+
+	<select id="selectPlatformExit" resultType="Dto" parameterType="Dto">
+		SELECT
+		*
+		FROM b2c_platform
+		WHERE name =
+		#{name,jdbcType=VARCHAR}
+		limit 0,1
+	</select>
+
+	<!-- 添加平台数字典 -->
+	<insert id="saveTvcPlatform" parameterType="Dto">
+	<![CDATA[
+		INSERT INTO 
+		aos_sys_dic 
+		( 
+		code_, 
+		desc_, 
+		status_, 
+		dic_index_id_, 
+		id_ 
+		)
+		VALUES(
+		#{name, jdbcType=VARCHAR},
+		#{name,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR},
+		#{dic_index_id_,jdbcType=VARCHAR},
+		#{id,jdbcType=VARCHAR}
+		)
+	  ]]>
+	</insert>
+
+
+
+
+
+	<!-- 从数据字典获取ID -->
+	<select id="getTvcPlatformId" resultType="Dto" parameterType="Dto">
+		select
+		id_
+		from
+		aos_sys_dic_index t
+		where 1=1
+		<if test="key_ != null and key_ != ''">
+			and key_ = '${key_}'
+		</if>
+
+	</select>
+
+
+	<!-- 查询产品信息 -->
+	<select id="listProducerPage" resultType="Dto" parameterType="Dto"
+		useCache="false">
+		SELECT
+		a.id,
+		a.asin as id_,
+		a.url as url_,
+		a.title as title_,
+		a.imageUrl as
+		image_,
+		a.purchasePrice as purchasePrice,
+		a.customerReviews as
+		customerReviews_,
+		CONCAT(a.`currency`,a.price) as Pirce_,
+		a.status as
+		status,
+		a.seller as company_,
+		a.task_id,
+		b.platformId,
+		c.name as
+		platformName,
+		b.keyword
+		FROM amazon_listings a
+		INNER JOIN
+		b2c_crawler_task b
+		ON a.task_id = b.id
+		INNER JOIN b2c_platform c
+		on
+		b.platformId =c.id
+
+		where 1=1
+		<if test="keyword != null and keyword != ''">
+			and lower(keyword) like '%${keyword}%'
+		</if>
+
+		<if test="type_ != null and type_ != ''">
+			and lower(seller) like '%${type_}%'
+		</if>
+
+		<if test="status != null and status != ''">
+			and a.status='${status}'
+		</if>
+
+		<if test="asin != null and asin != ''">
+			and asin='${asin}'
+		</if>
+		<if test="platformName != null and platformName != ''">
+			and c.id = '${platformName}'
+		</if>
+
+	</select>
+
+
+
+	<!-- 更新平台 -->
+	<update id="updateListings" parameterType="Dto">
+		UPDATE amazon_listings
+		<set>
+			<if test="status != null">
+				status = #{status, jdbcType=INTEGER}
+			</if>
+
+			<if test="purchasePrice != null">
+				purchasePrice = #{purchasePrice, jdbcType=INTEGER}
+			</if>
+		</set>
+		WHERE id in (${ids})
+	</update>
+
+
+
+	<!-- 更新采购价 -->
+	<update id="editPurchaseprice" parameterType="Dto">
+		UPDATE amazon_listings
+
+		<set>
+			<if test="purchasePrice != null">
+				purchasePrice = #{purchasePrice, jdbcType=INTEGER}
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+
+	<!-- 查询任务信息 -->
+	<select id="listTrackTasks" resultType="Dto" parameterType="Dto">
+	<![CDATA[
+		SELECT 
+ 		t.id
+ 		,t.keyword
+		,t.createdAt
+ 		,t.status
+ 		,u.name_ as principal
+		,m.name as platformName
+ 		FROM b2c_crawler_task t,b2c_platform m,aos_sys_user u
+		where 1=1 and t.principal=u.id_ and t.platformId=m.id
+		and t.status <> 4
+		]]>
+		<if test="key != null and key != ''">
+			and lower(t.keyword) like '%${key}%'
+		</if>
+
+		<if test="company != null and company != ''">
+			and m.id = '${company}'
+		</if>
+
+	</select>
+
+
+	<!-- 查询任务属性信息 -->
+	<select id="listAttr" resultType="Dto" parameterType="Dto">
+		select
+		t.id
+		as id
+		,t.crawler_task_id as task_id
+		,m.keyword
+		,t.attrName as attr_name
+		,t.attrValue as attr_avalue
+		,t.attrDescribe as attr_desc
+		,t.createdAt as
+		create_at
+		from amazon_task_attribute t,b2c_crawler_task m
+		where
+		t.crawler_task_id =
+		m.id
+		and t.crawler_task_id = '${id}'
+	</select>
+
+
+	<insert id="insertTrackTask" parameterType="Dto">
+	<![CDATA[
+		insert into b2c_crawler_task(
+  		id,
+ 		keyword,
+ 		platformId,
+ 		principal,
+  		createdAt,
+  		status
+ 		)
+  		values (
+		#{id, jdbcType=VARCHAR},
+		#{keyword, jdbcType=VARCHAR},
+		#{platformId, jdbcType=VARCHAR},
+		#{principal, jdbcType=VARCHAR},
+		#{createdAt, jdbcType=VARCHAR},
+		#{status, jdbcType=VARCHAR}
+		
+ 		)
+	  ]]>
+
+	</insert>
+
+
+
+	<delete id="deleteAttr" parameterType="Dto">
+
+		delete from amazon_task_attribute
+		where 1=1
+		<if test="id != null">
+			and id = #{id, jdbcType=VARCHAR}
+		</if>
+
+	</delete>
+
+
+	<insert id="saveCategories" parameterType="Dto">
+	  <![CDATA[
+		insert into b2c_task_categories(
+  		id,
+ 		crawler_task_id,
+ 		categories_key,
+ 		categories_value,
+  		status
+ 		)
+  		values (
+		#{id, jdbcType=VARCHAR},
+		#{crawler_task_id, jdbcType=VARCHAR},
+		#{categories_key, jdbcType=VARCHAR},
+		#{categories_value, jdbcType=VARCHAR},
+		#{status, jdbcType=VARCHAR}
+		
+ 		)
+	  ]]>
+	</insert>
+
+
+
+
+	<!-- 编辑任务信息 -->
+	<update id="editAttr" parameterType="Dto">
+		UPDATE amazon_task_attribute
+		<set>
+			<if test="attr_name != null">
+				attrName = #{attr_name, jdbcType=VARCHAR},
+			</if>
+			<if test="attr_avalue != null">
+				attrValue = #{attr_avalue, jdbcType=VARCHAR},
+			</if>
+			<if test="attr_desc != null">
+				attrDescribe = #{attr_desc, jdbcType=INTEGER}
+			</if>
+
+
+		</set>
+		WHERE id = #{id}
+	</update>
+
+
+
+	<!-- 增加任务信息 -->
+	<insert id="insertAttr" parameterType="Dto">
+	<![CDATA[
+		insert into
+		amazon_task_attribute (
+		id,
+		crawler_task_id,
+		attrName,
+		attrValue,
+		attrDescribe,
+		createdAt
+		)
+		values (
+		#{id, jdbcType=VARCHAR},
+		#{crawler_task_id,jdbcType=VARCHAR},
+		#{attr_name,jdbcType=VARCHAR},
+		#{attr_avalue,jdbcType=VARCHAR},
+		#{attr_desc,jdbcType=VARCHAR},
+		#{createAt,jdbcType=VARCHAR}
+		)
+	  ]]>
+	</insert>
+
+	<!-- 更新任务 -->
+	<update id="updateTaskStatus" parameterType="Dto">
+		UPDATE b2c_crawler_task
+		<set>
+
+			<if test="keyword != null">
+				keyword = #{keyword, jdbcType=VARCHAR},
+			</if>
+
+			<if test="status != null">
+				status = #{status, jdbcType=INTEGER}
+			</if>
+
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 查询任务属性信息 -->
+	<select id="listTracesPage" resultType="Dto" parameterType="Dto">
+		SELECT
+		x.asin,
+		x.name AS platformName,
+		y.url,
+		y.image,
+		y.seller,
+		y.title,
+		y.keywords,
+		y.avg_price,
+		y.avg_ranking,
+		y.avg_stockQuanty,
+		y.count_v,
+		y.update_time
+		FROM (SELECT DISTINCT
+		x.name,
+		z.asin,
+		x.id
+		FROM b2c_platform
+		x
+		INNER JOIN b2c_crawler_task
+		y
+		ON x.id = y.platformId
+		INNER JOIN
+		amazon_listings z
+		ON y.id = z.task_id
+		INNER JOIN amazon_listing_traces t
+		ON z.asin = t.asin) x
+		INNER JOIN (SELECT
+		a.asin,
+		a.url,
+		a.mainImageUrl AS
+		image,
+		a.seller,
+		a.title,
+		a.keywords,
+		CONCAT(a.currency, CAST(b.avg_price
+		AS char)) AS avg_price,
+		b.avg_ranking,
+		b.avg_stockQuanty,
+		b.count_v,
+		c.createdAt AS update_time
+		FROM (SELECT DISTINCT
+		asin,
+		url,
+		mainImageUrl,
+		seller,
+		title,
+		keywords,
+		currency
+		FROM amazon_listing_traces) a
+		INNER JOIN
+		(SELECT
+		t.asin,
+		ROUND(AVG(t.price), 2) avg_price,
+		ROUND(AVG(t.ranking))
+		avg_ranking,
+		ROUND(AVG(t.stockQuantity)) avg_stockQuanty,
+		COUNT(1) AS
+		count_v
+		FROM amazon_listing_traces t
+		GROUP BY t.asin) b
+		ON a.asin =
+		b.asin
+		INNER JOIN (SELECT
+		w.asin,
+		MAX(w.createdAt) createdAt
+		FROM (SELECT
+		p.asin,
+		p.price,
+		p.customerReviews,
+		p.listingNums,
+		MIN(p.createdAt)
+		createdAt
+		FROM amazon_listing_traces AS p
+		GROUP BY p.asin,
+		p.price,
+		p.customerReviews,
+		p.listingNums) w
+		GROUP BY w.asin) c
+		ON a.asin = c.asin
+		WHERE 1 = 1) y
+		ON x.asin = y.asin
+		<if test="key != null and key != ''">
+			and lower(y.keywords) like '%${key}%'
+		</if>
+		<if test="asin != null and asin != ''">
+			and x.asin= '${asin}'
+		</if>
+		<if test="platformName != null and platformName != ''">
+			and x.id = '${platformName}'
+		</if>
+
+	</select>
+
+	<!-- 查询价格信息 -->
+	<select id="listChange" resultType="Dto" parameterType="Dto">
+		SELECT *
+		FROM (SELECT
+		t.asin AS url_g,
+		t.price AS price_c,
+		t.currency,
+		t.ranking as rangking,
+		t.stockQuantity as stockQuantity,
+		t.customerReviews AS customerreviews_c,
+		t.reviewStar AS reviewstat_c,
+		t.listingNums AS listingnum_c,
+		DATE_FORMAT(t.createdAt, '%Y-%m-%d') AS
+		createAt
+		FROM amazon_listing_traces t
+		WHERE 1 = 1
+		<if test="id != null and id != ''">
+			AND t.asin = '${id}'
+		</if>
+		ORDER BY t.createdAt DESC
+		LIMIT 0, 15) a
+		ORDER BY createAt
+
+	</select>
+
+	<select id="selectAttributeByName" resultType="Dto"
+		parameterType="Dto">
+		SELECT
+		id,
+		crawler_task_id,
+		attrName,
+		attrValue,
+		attrDescribe,
+		createdAt
+		FROM
+		amazon_task_attribute
+		WHERE attrName =
+		'${attr_name}'
+		and
+		crawler_task_id='${crawler_task_id}'
+		limit 0,1
+	</select>
+
+
+	<select id="listMatchedLogsiticFetchJobsPage" resultType="Dto"
+		parameterType="Dto">
+		SELECT
+		a.id,
+		a.url,
+		a.countExpr,
+		a.countryExpr as countries,
+		a.enabled,
+		b.item_no,
+		b.image,
+		b.name
+		FROM sunsky_job a
+		INNER JOIN
+		sunsky_product b
+		ON a.product_id = b.ID
+	</select>
+
+	<select id="listsunskytransportsolutionsPage" resultType="Dto"
+		parameterType="Dto" useCache="false">
+		select
+		t.item_no,
+		t.provider_name,
+		t.provider_logo,
+		t.provider_url,
+		t.weight,
+		t.dimension,
+		t.price,
+		t.time,
+		t.create_at as create_at,
+		t.total
+		as count,
+		t.country
+		from transport_solution t
+		where 1=1
+		<if test="itemno != null and itemno != ''">
+			and t.item_no = '${itemno}'
+		</if>
+		<if test="country != null and country != ''">
+			and t.country = '${country}'
+		</if>
+		<if test="count != null and count != ''">
+			and t.total = '${count}'
+		</if>
+	</select>
+
+
+	<select id="listsunskytransportsolutions" resultType="Dto"
+		parameterType="Dto" useCache="false">
+		select
+		t.item_no,
+		t.provider_name,
+		t.provider_logo,
+		t.provider_url,
+		t.weight,
+		t.dimension,
+		t.dimension/5000 as standarddimension,
+		t.price,
+		t.time,
+		t.create_at as create_at,
+		t.total
+		as count,
+		t.country
+		from
+		transport_solution t
+		where 1=1
+		<if test="itemno != null and itemno != ''">
+			and t.item_no = '${itemno}'
+		</if>
+		<if test="country != null and country != ''">
+			and t.country = '${country}'
+		</if>
+		<if test="count != null and count != ''">
+			and t.total = '${count}'
+		</if>
+	</select>
+
+	<select id="dictPlatforms" resultType="Dto">
+		SELECT `name` AS display,
+		`id` AS `value`FROM b2c_platform WHERE online = 1
+	</select>
+
+	<select id="llcountry" resultType="Dto">
+		SELECT `value` AS
+		display,
+		`key` AS `value`
+		FROM country
+		where country.key in
+		(select distinct
+		country from transport_solution)
+	</select>
+
+
+	<select id="listSunskyProductsPage" resultType="Dto"
+		parameterType="Dto" useCache="false">
+		SELECT
+		t.id,
+		t.item_no as itemno,
+		t.url,
+		t.name,
+		t.price,
+		t.image,
+		t.create_at,
+		t.status
+		FROM sunsky_product t
+		where 1=1
+		<if test="itemno != null and itemno != ''">
+			and t.item_no = '${itemno}'
+		</if>
+		<if test="status != null and status != ''">
+			and t.status = '${status}'
+		</if>
+	</select>
+
+
+	<!-- 更新商品表状态 -->
+	<update id="updatesunskystatus" parameterType="Dto">
+		UPDATE sunsky_product
+		<set>
+			<if test="status != null">
+				status = #{status, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE item_no = '${itemno}'
+	</update>
+
+
+
+
+
+
+	<!-- 添加任务 -->
+	<insert id="insertJob" parameterType="Dto">
+	<![CDATA[
+	insert into 
+	sunsky_job (url,countExpr,countryExpr,product_id,enabled )
+ 	 values
+ 	 (
+  	 #{url, jdbcType=VARCHAR},
+ 	 #{countExpr, jdbcType=VARCHAR},
+ 	 #{countryExpr,jdbcType=VARCHAR},
+  	 #{id,jdbcType=VARCHAR},
+ 	 #{enabled,jdbcType=VARCHAR}
+  )
+  ]]>
+	</insert>
+
+
+
+
+	<!-- 更新平台 -->
+
+	<delete id="deleteJob" parameterType="Dto">
+
+		delete from sunsky_job
+		where 1=1
+		<if test="url != null">
+			and url = #{url, jdbcType=VARCHAR}
+		</if>
+
+	</delete>
+
+
+	<!-- 更新数量 -->
+	<update id="updateJobCount" parameterType="Dto">
+		UPDATE sunsky_job
+		<set>
+			<if test="countExpr != null">
+				countExpr = #{countExpr, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+</mapper>

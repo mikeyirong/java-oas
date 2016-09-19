@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="AliexpressMessageMapper">
+	<!-- - 根据查询条件检索速卖通邮件模版 -->
+	<select id="findMessageTemplatePage" resultType="Dto"
+		parameterType="Dto">
+		SELECT
+		t0.ID as id,
+		t0.NAME as name,
+		t0.CONTENT as content,
+		t0.DESCRIPTION as description,
+		t0.CREATED_AT as created_at,
+		t1.name as
+		created_by,
+		t0.STATUS as status
+		FROM aliexpress_email_template as t0
+		LEFT JOIN (
+		SELECT it0.id_ as id,
+		it0.name_ as name
+		FROM aos_sys_user as
+		it0
+		) as t1 ON t1.id = t0.CREATED_BY
+
+		WHERE 1 = 1
+		<if test="name != null and name != ''">
+			and t0.NAME like '%${name}%'
+		</if>
+	</select>
+
+	<!-- 添加站内信模板 -->
+	<insert id="insertMessageTemplate" parameterType="Dto">
+		<![CDATA[
+		INSERT INTO
+			aliexpress_email_template
+				(NAME,CONTENT,DESCRIPTION,CREATED_AT,CREATED_BY,STATUS) values (
+			#{name,jdbcType=VARCHAR},
+			#{content,jdbcType=VARCHAR},
+			#{description,jdbcType=VARCHAR},
+			now(),
+			#{created_by,jdbcType=VARCHAR},
+			1
+		)
+		]]>
+	</insert>
+
+	<!-- 更新站内信模板 -->
+	<update id="updateMessageTemplate" parameterType="Dto">
+		<![CDATA[
+		UPDATE
+		aliexpress_email_template
+			set NAME = #{name,jdbcType=VARCHAR},
+			CONTENT = #{content,jdbcType=VARCHAR},
+			DESCRIPTION = #{description,jdbcType=VARCHAR},
+			STATUS= #{status,jdbcType=VARCHAR}
+			WHERE NAME = #{name}
+		]]>
+	</update>
+
+
+	<!-- 修改模版状态 -->
+	<update id="changeTemplateStatus" parameterType="Dto">
+		UPDATE
+		aliexpress_email_template
+		set STATUS= #{status,jdbcType=VARCHAR}
+		WHERE
+		ID =
+		#{templateId}
+	</update>
+
+	<!-- 实时查询速卖通待发送的站内信队列 -->
+	<select id="findMessageQueuePage" parameterType="Dto"
+		resultType="Dto">
+		<![CDATA[
+		SELECT
+			t0.id as id,
+			t0.source as source,
+			t0.destination as
+			destination,
+			t0.buyer_login_id as buyer_login_id,
+			t0.order_id as
+			order_id,
+			t0.created_at as created_at,
+			t1.name as seller
+		FROM
+			aliexpress_email_send_queue as t0
+		LEFT JOIN (
+			select it0.id,
+			it0.name,
+			FROM aliexpress_seller_account
+		) AS t1 ON t1.id = t0.seller_id
+		order by
+		t0.created_at asc
+		]]>
+	</select>
+
+	<!-- 实施查询速卖通站内信发送记录 -->
+	<select id="findMessageSentHistories" parameterType="Dto"
+		resultType="Dto">
+		SELECT
+			t0.ID as id,
+			t0.SOURCE as source,
+			t0.destination as destination,
+			t0.buyer_login_id as buyer_login_id,
+			t0.order_id as order_id,
+			t0.created_at as created_at
+			t0.order_status as order_status,
+			t1.name as seller
+		FROM aliexpress_email_send_history
+		INNER JOIN (
+			select it0.id,
+			it0.name,
+		FROM aliexpress_seller_account
+		) AS t1 ON t1.id = t0.seller_id
+
+        <if test="order_id != null and order_id != ''">
+			and t0.order_id like '%${order_id}%'
+		</if>
+		
+		<if test="seller_name != null and seller_name != ''">
+			and t1.name like '%${seller_name}%'
+		</if>
+		
+		order by
+		t0.created_at asc
+	</select>
+
+	<!-- 根据站内信发送记录查找站内信信息 -->
+	<select id="findMessageSendHistoryById" parameterType="Dto"
+		resultType="Dto">
+		<![CDATA[
+		SELECT
+		  t0.ID as id,
+		  t0.SOURCE as source,
+		  t0.destination as destination,
+		  t0.buyer_login_id as buyer_login_id,
+		  t0.order_id as order_id,
+		  t0.created_at as created_at
+		  t0.order_status as order_status,
+		  t1.name as seller
+		FROM aliexpress_email_send_history
+		LEFT JOIN (
+			select it0.id,
+			it0.name,
+			FROM aliexpress_seller_account
+		) AS t1 ON t1.id = t0.seller_id
+		
+		WHERE 1=1 
+		
+		t0.ID = #{messageHistoryId}
+		]]>
+	</select>
+</mapper>

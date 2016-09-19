@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="LineManager">
+
+	<!-- 查询用户信息 -->
+	<select id="listuserPage" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id ,
+		t.username,
+		t.password,
+		t.enabled,
+		t.create_at
+		FROM b2c_user t
+		where 1=1
+		<if test="username != null and username != ''">
+			and t.username like '%${username}%'
+		</if>
+		<if test="id != null and id != ''">
+			and t.id = #{id}
+		</if>
+	</select>
+
+	<!-- 查询密码的一致性 -->
+	<select id="ispassword" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id ,
+		t.username,
+		t.password,
+		t.enabled,
+		t.create_at
+		FROM b2c_user t
+		where 1=1
+		<if test="id != null and id != ''">
+			and t.id = #{id}
+		</if>
+	</select>
+
+	<!-- 查询重复用户名 -->
+	<select id="exituserusername" resultType="Dto" parameterType="Dto">
+		SELECT
+		*
+		FROM b2c_user
+		where 1=1 and
+		username =
+		#{username,jdbcType=VARCHAR}
+		<if test="id != null and id != ''">
+			and id = #{id}
+		</if>
+		limit
+		0,1
+	</select>
+
+
+
+	<!-- 修改用户信息 -->
+	<update id="updateuser" parameterType="Dto">
+		UPDATE b2c_user
+		<set>
+			<if test="enabled != null">
+				enabled = #{enabled, jdbcType=VARCHAR},
+			</if>
+			<if test="username != null">
+				username = #{username, jdbcType=VARCHAR},
+			</if>
+			<if test="password != null">
+				password = #{password, jdbcType=VARCHAR},
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+
+	<!-- 新增加用户 -->
+	<insert id="insertuser">
+	<![CDATA[
+	INSERT INTO b2c_user (username, password)
+  	VALUES (
+  	#{username,jdbcType=VARCHAR},
+ 	#{password,jdbcType=VARCHAR}
+ 	)
+	]]>
+	</insert>
+
+	<!-- 查询平台 -->
+	<select id="listplatformPage" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id,
+		t.name as platformName,
+		t.remark,
+		t.login_url,
+		t.logout_url
+		FROM b2c_global_platform t
+		where 1=1
+		<if test="platformName != null and platformName != ''">
+			and t.name like '%${platformName}%'
+		</if>
+	</select>
+
+	<!-- 增加平台 -->
+	<insert id="insertplatform" parameterType="Dto">
+		INSERT INTO
+		b2c_global_platform (name, remark,login_url,logout_url)
+		VALUES (
+		#{platformName,jdbcType=VARCHAR},
+		#{remark,jdbcType=VARCHAR},
+		#{login_url,jdbcType=VARCHAR},
+		#{logout_url,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 修改平台 -->
+	<update id="updateplatform" parameterType="Dto">
+		UPDATE b2c_global_platform
+		<set>
+			<if test="platformName != null">
+				name = #{platformName, jdbcType=VARCHAR},
+			</if>
+			<if test="remark != null">
+				remark = #{remark, jdbcType=VARCHAR},
+			</if>
+			<if test="login_url != null">
+				login_url = #{login_url, jdbcType=VARCHAR},
+			</if>
+			<if test="logout_url != null">
+				logout_url = #{logout_url, jdbcType=VARCHAR},
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 判断平台名不重复 -->
+	<select id="existplatform" resultType="Dto" parameterType="Dto">
+		SELECT
+		*
+		FROM b2c_global_platform
+		where name =
+		#{platformName,jdbcType=VARCHAR}
+		<if test="id != null and id != ''">
+			and id != #{id}
+		</if>
+		limit
+		0,1
+	</select>
+
+	<!-- 查询店铺信息 -->
+	<select id="listshopPage" resultType="Dto" parameterType="Dto">
+		SELECT
+		a.id,
+		a.shop_name ,
+		a.enabled,
+		b.username as user_name,
+		a.shop_user,
+		a.shop_password,
+		c.name as
+		paltform_name,
+		a.create_at
+		FROM
+		b2c_shop a
+		INNER JOIN b2c_user b
+		ON
+		a.manager_id = b.id
+		INNER JOIN
+		b2c_global_platform c
+		ON a.platform_id =
+		c.id
+		where 1=1
+		<if test="shop_name != null and shop_name != ''">
+			and a.shop_name like '%${shop_name}%'
+		</if>
+	</select>
+
+	<!-- 查询所有用户 -->
+	<select id="llAllUser" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id as `value`,
+		t.username AS display
+		FROM b2c_user t
+		where 1=1
+		<if test="enabled != null and enabled != ''">
+			and t.enabled = #{enabled}
+		</if>
+
+	</select>
+
+	<!-- 查询所有平台 -->
+	<select id="llAllPlatform" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id AS `value`,
+		t.name AS display
+		FROM
+		b2c_global_platform t
+		where
+		1=1
+	</select>
+
+	<!-- 增加店铺信息 -->
+	<insert id="insertShop">
+		INSERT INTO b2c_shop (
+		shop_name,
+		manager_id,
+		platform_id,
+		shop_user,
+		shop_password,
+		enabled
+		)
+		VALUES(
+		#{shop_name,jdbcType=VARCHAR},
+		#{user_name,jdbcType=VARCHAR},
+		#{platform_name,jdbcType=VARCHAR},
+		#{shop_user,jdbcType=VARCHAR},
+		#{shop_password,jdbcType=VARCHAR},
+		#{enabled,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<!-- 判断店铺名的唯一性 -->
+	<select id="isshopname" resultType="Dto" parameterType="Dto">
+		SELECT
+		*
+		FROM b2c_shop t
+		where 1=1
+		<if test="shop_name != null and shop_name != ''">
+			and shop_name = #{shop_name}
+		</if>
+		<if test="id != null and id != ''">
+			and id != #{id}
+		</if>
+		limit 0,1
+	</select>
+
+	<!-- 修改店铺信息 -->
+	<update id="updateshop" parameterType="Dto">
+		UPDATE b2c_shop
+		<set>
+			<if test="shop_name != null">
+				shop_name = #{shop_name, jdbcType=VARCHAR},
+			</if>
+			<if test="user_name != null">
+				manager_id = #{user_name, jdbcType=VARCHAR},
+			</if>
+			<if test="platform_name != null">
+				platform_id = #{platform_name, jdbcType=VARCHAR},
+			</if>
+			<if test="shop_user != null">
+				shop_user = #{shop_user, jdbcType=VARCHAR},
+			</if>
+			<if test="shop_password != null">
+				shop_password = #{shop_password, jdbcType=VARCHAR}
+			</if>
+			<if test="enabled != null">
+				enabled = #{enabled, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 查询所有的线路信息 -->
+	<select id="listnetlinePage" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id,
+		t.line_name,
+		t.line_address,
+		t.create_at
+		FROM b2c_netline t
+		where 1=1
+		<if test="line_name != null and line_name != ''">
+			and t.line_name like '%${line_name}%'
+		</if>
+	</select>
+
+	<!-- 新增线路 -->
+	<insert id="insertnetline" parameterType="Dto">
+		<![CDATA[
+		INSERT INTO b2c_netline (line_name, line_address)
+		VALUES(
+		#{line_name,jdbcType=VARCHAR},
+ 		#{line_address,jdbcType=VARCHAR}
+		)
+		]]>
+	</insert>
+
+	<!-- 判断线路名的唯一性 -->
+	<select id="isnetline" resultType="Dto" parameterType="Dto">
+		select *
+		from
+		b2c_netline t
+		where
+		t.line_name
+		=
+		#{line_name,jdbcType=VARCHAR}
+		<if test="id != null and id != ''">
+			and id != #{id}
+		</if>
+		limit
+		0,1
+	</select>
+
+	<!-- 修改线路 -->
+	<update id="updatenetline" parameterType="Dto">
+		UPDATE b2c_netline
+		<set>
+			<if test="line_name != null">
+				line_name = #{line_name, jdbcType=VARCHAR},
+			</if>
+			<if test="line_address != null">
+				line_address = #{line_address, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+	<!-- 查询所有店铺线路 -->
+	<select id="listshoplinePage" resultType="Dto" parameterType="Dto">
+		SELECT
+		a.id,
+		b.shop_name,
+		c.line_name,
+		d.name as platform_name,
+		a.active,
+		a.create_at
+		FROM b2c_shop_netline a
+		INNER JOIN b2c_shop b
+		ON a.shop_id =
+		b.id
+		INNER JOIN b2c_netline c
+		ON a.line_id = c.id
+		INNER JOIN
+		b2c_global_platform d
+		ON b.platform_id = d.id
+		WHERE 1 = 1
+		<if test="line_name != null and line_name != ''">
+			and c.line_name like '%${line_name}%'
+		</if>
+		<if test="shop_name != null and shop_name != ''">
+			and b.shop_name like '%${shop_name}%'
+		</if>
+		<if test="platform_name != null and platform_name != ''">
+			and b.platform_id like '%${platform_name}%'
+		</if>
+	</select>
+
+	<!-- 查询所有店铺 -->
+	<select id="llallshop" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id as `value`,
+		CONCAT(	a.name," : ",t.shop_name)  AS display
+		FROM b2c_shop t,b2c_global_platform a
+		where 1=1
+		and t.id
+		not in
+		(select shop_id from b2c_shop_netline)
+		and t.enabled='1'
+		and t.platform_id = a.id
+	</select>
+
+	<!-- 查询所有线路 -->
+	<select id="llallline" resultType="Dto" parameterType="Dto">
+		SELECT
+		t.id as `value`,
+		t.line_name AS display
+		FROM b2c_netline t
+		where 1=1
+	</select>
+
+	<!-- 判断店铺与线路是否冲突 -->
+	<select id="islineshop" resultType="Dto" parameterType="Dto">
+		SELECT
+		line_id
+		FROM b2c_shop_netline
+		WHERE shop_id IN
+		(SELECT
+		id
+		FROM
+		b2c_shop
+		WHERE platform_id IN
+		(SELECT
+		platform_id
+		FROM b2c_shop
+		WHERE 1=1
+		<if test="shop_name != null and shop_name != ''">
+			and id = #{shop_name}
+		</if>
+		)
+		)
+		<if test="line_name != null and line_name != ''">
+			and line_id = #{line_name}
+		</if>
+		limit 0,1
+
+	</select>
+
+	<!-- 获取平台名称 -->
+	<select id="platformget" resultType="Dto" parameterType="Dto">
+		SELECT
+		a.name as platform_name,
+		a.id
+		FROM b2c_global_platform a
+		INNER JOIN
+		b2c_shop b
+		ON a.id = b.platform_id
+		WHERE 1=1
+		<if test="shop_name != null and shop_name != ''">
+			and b.id = #{shop_name}
+		</if>
+	</select>
+
+	<!-- 根据线路ID获取线路名称 -->
+	<select id="getlinename" resultType="Dto" parameterType="Dto">
+		SELECT
+		line_name
+		FROM b2c_netline
+		WHERE 1=1
+		<if test="line_name != null and line_name != ''">
+			and id = #{line_name}
+		</if>
+	</select>
+
+	<!-- 新增店铺线路 -->
+	<insert id="insertshopline" parameterType="Dto">
+	<![CDATA[
+	INSERT INTO b2c_shop_netline 
+	(
+	shop_id, 
+	platform_id,
+	line_id
+	)
+  	VALUES (
+  	#{shop_name,jdbcType=VARCHAR},
+  	#{platform_id,jdbcType=VARCHAR},
+ 	#{line_name,jdbcType=VARCHAR}
+ 	)
+ 	]]>
+	</insert>
+
+	<!-- 修改店铺线路状态 -->
+	<update id="updateshopline" parameterType="Dto">
+		UPDATE b2c_shop_netline
+		<set>
+			<if test="active != null">
+				active = #{active, jdbcType=VARCHAR}
+			</if>
+		</set>
+		WHERE id = #{id}
+	</update>
+
+</mapper>
