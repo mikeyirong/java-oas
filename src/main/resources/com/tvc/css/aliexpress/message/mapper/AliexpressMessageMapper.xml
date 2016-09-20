@@ -74,8 +74,8 @@
 		resultType="Dto">
 		SELECT
 			t0.id as id,
-		  t0.source as source,
-		  t0.destination as destination,
+		    t0.source as source,
+		    t0.destination as destination,
 			t0.buyer_login_id as buyer_login_id,
 			t0.order_id as order_id,
 			t0.created_at as created_at,
@@ -101,25 +101,27 @@
 	</select>
 
 	<!-- 实施查询速卖通站内信发送记录 -->
-	<select id="findMessageSentHistories" parameterType="Dto"
+	<select id="findMessageSentHistoriesPage" parameterType="Dto"
 		resultType="Dto">
 		SELECT
-		t0.ID as id,
-		t0.SOURCE as source,
-		t0.destination as destination,
-		t0.buyer_login_id as buyer_login_id,
-		t0.order_id as order_id,
-		t0.created_at as created_at
-		t0.order_status as order_status,
-		t1.name as
-		seller
-		FROM aliexpress_email_send_history
+			t0.ID as id,
+			t0.content as content,
+			t0.SOURCE as source,
+			t0.destination as destination,
+			t0.buyer_login_id as buyer_login_id,
+			t0.order_id as order_id,
+			t0.created_at as created_at,
+	   		t0.order_status as order_status,
+			t1.name as seller
+		FROM aliexpress_email_send_history as t0
 		INNER JOIN (
-		select it0.id,
-		it0.name,
-		FROM aliexpress_seller_account
+		    select 
+        it0.id AS id,
+	    	it0.name as name
+		    FROM aliexpress_seller_account it0
 		) AS t1 ON t1.id = t0.seller_id
 
+        WHERE 1 = 1
 		<if test="order_id != null and order_id != ''">
 			and t0.order_id like '%${order_id}%'
 		</if>
@@ -127,9 +129,12 @@
 		<if test="seller_name != null and seller_name != ''">
 			and t1.name like '%${seller_name}%'
 		</if>
+		
+		<if test="order_status != null and order_status != ''">
+			and t0.order_status = '${order_status}'
+		</if>
 
-		order by
-		t0.created_at asc
+		order by t0.created_at asc
 	</select>
 
 	<!-- 根据站内信发送记录查找站内信信息 -->
@@ -157,4 +162,67 @@
 		t0.ID = #{messageHistoryId}
 		]]>
 	</select>
+	
+	
+	<!-- 查询店铺信息  -->
+	<select id="findAliexpressStorePage" parameterType="Dto" resultType="Dto">
+	   SELECT
+	      t0.ID as id, 
+	      t0.NAME as name,
+	      t0.PRINCIPAL as principal,
+	      t0.CREDENTIALS as credentials,
+	      t0.APP_KEY as app_key,
+	      t0.CREATED_AT as created_at,
+	      t0.CLIENT_SECRET as client_secret,
+	      t0.REFRESH_TOKEN as refresh_token
+	   FROM  aliexpress_seller_account as t0
+	   WHERE 1=1
+	   
+	   <if test="name != null and name != ''">
+			and t0.name like '%${name}%'
+	   </if>
+	   
+	   <if test="principal != null and principal != ''">
+			and t0.principal like '%${principal}%'
+	   </if>
+	</select>
+	
+	<!-- 根据ID检索店铺API授权信息 -->
+	<select id="findAliexpressStoreById" parameterType="Dto" resultType="Dto">
+	   <![CDATA[
+	      SELECT
+		      t0.ID as id
+	   	  FROM  aliexpress_seller_account as t0
+	   	  WHERE 1=1 
+	   	  
+	   	  AND t0.ID = #{id}
+	   ]]>
+	</select>
+	<!-- 新增店铺API授权记录 -->
+	<insert id="saveAsAliexpressStoreApi" parameterType="Dto">
+		<![CDATA[
+		  INSERT INTO aliexpress_seller_account
+		     (NAME,PRINCIPAL,APP_KEY,CLIENT_SECRET,REFRESH_TOKEN,CREATED_AT) VALUES (
+		     #{name,jdbcType=VARCHAR},
+		     #{principal,jdbcType=VARCHAR},
+		     #{app_key,jdbcType=VARCHAR},
+		     #{client_secret,jdbcType=VARCHAR},
+		     #{refresh_token,jdbcType=VARCHAR},
+		     now()
+		   )
+		]]>
+	</insert>
+	
+	<!-- 保存店铺API授权记录 -->
+	<update id="saveAliexpressStoreApi" parameterType="Dto">
+	   <![CDATA[
+	       UPDATE aliexpress_seller_account SET
+	       NAME = #{name,jdbcType=VARCHAR},
+	       PRINCIPAL = #{principal,jdbcType=VARCHAR},
+		   APP_KEY = #{app_key,jdbcType=VARCHAR},
+		   CLIENT_SECRET = #{client_secret,jdbcType=VARCHAR},
+		   REFRESH_TOKEN = #{refresh_token,jdbcType=VARCHAR}
+		   WHERE ID = #{id}
+	   ]]>
+	</update>
 </mapper>

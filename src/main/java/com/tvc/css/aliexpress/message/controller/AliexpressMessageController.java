@@ -104,4 +104,65 @@ public class AliexpressMessageController extends LoggingSupport {
 		Dto inDto = Dtos.newDto(request);
 		WebCxt.write(response, AOSJson.toGridJson(messageService.findMessageQueue(inDto), inDto.getPageTotal()));
 	}
+
+	/**
+	 * 实时展示速卖通站内信发送历史记录UI
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping("messageSentHistory")
+	public String showMessageSentHistory(HttpServletRequest request, HttpServletResponse response) {
+		return "css/aliexpress/message/messageSentHistory.jsp";
+	}
+
+	/**
+	 * 实时展示速卖通站内信发送历史记录
+	 * 
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("findMessageSentHistory")
+	public void findMessageSentHistory(HttpServletRequest request, HttpServletResponse response) {
+		Dto inDto = Dtos.newDto(request);
+		WebCxt.write(response,
+				AOSJson.toGridJson(messageService.findMessageSentHistories(inDto), inDto.getPageTotal()));
+	}
+
+	/**
+	 * 实时渲染速卖通店铺API信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping("aliexpressApi")
+	public String showAliexpressStore(HttpServletRequest request, HttpServletResponse response) {
+		return "css/aliexpress/message/aliexpressApi.jsp";
+	}
+
+	/**
+	 * 实时查询与条件相匹配的速卖通店铺API授权信息
+	 * 
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("findAliexpressStore")
+	public void findAliexpressStore(HttpServletRequest request, HttpServletResponse response) {
+		Dto inDto = Dtos.newDto(request);
+		WebCxt.write(response, AOSJson.toGridJson(messageService.findAliexpressStore(inDto), inDto.getPageTotal()));
+	}
+
+	/**
+	 * 保存速卖通店铺API授权信息
+	 * 
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("saveAliexpressStoreApi")
+	public void saveAliexpressStoreApi(HttpServletRequest request, HttpServletResponse response) {
+		Dto inDto = Dtos.newDto(request);
+		WebCxt.write(response, AOSJson.toJson(messageService.saveAsAliexpressStoreApi(inDto)));
+	}
 }
