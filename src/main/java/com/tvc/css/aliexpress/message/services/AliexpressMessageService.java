@@ -67,7 +67,7 @@ public class AliexpressMessageService {
 	 * @return
 	 */
 	public List<Dto> findMessageQueue(Dto inDto) {
-		return sqlDao.list("AliexpressMessageMapper.findMessageQueuePage", inDto);
+		return sqlDao.list("AliexpressMessageMapper.listMessageQueuePage", inDto);
 	}
 
 	/**
@@ -77,6 +77,6 @@ public class AliexpressMessageService {
 	 * @return
 	 */
 	public List<Dto> findMessageSentHistories(Dto inDto) {
-		return sqlDao.list("AliexpressMessageMapper.findMessageSentHistories", inDto);
+		return sqlDao.list("AliexpressMessageMapper.findMessageSentHistoriesPage", inDto);
 	}
 }

@@ -70,58 +70,64 @@
 	</update>
 
 	<!-- 实时查询速卖通待发送的站内信队列 -->
-	<select id="findMessageQueuePage" parameterType="Dto"
+	<select id="listMessageQueuePage" parameterType="Dto"
 		resultType="Dto">
-		<![CDATA[
 		SELECT
 			t0.id as id,
-			t0.source as source,
-			t0.destination as
-			destination,
+		  t0.source as source,
+		  t0.destination as destination,
 			t0.buyer_login_id as buyer_login_id,
-			t0.order_id as
-			order_id,
+			t0.order_id as order_id,
 			t0.created_at as created_at,
-			t1.name as seller
+			t1.name as seller,
+			t0.content as content
 		FROM
 			aliexpress_email_send_queue as t0
 		LEFT JOIN (
-			select it0.id,
-			it0.name,
-			FROM aliexpress_seller_account
+			select it0.id as id,
+			it0.name as name
+			FROM aliexpress_seller_account as it0
 		) AS t1 ON t1.id = t0.seller_id
+		
+		WHERE 1 = 1
+		<if test="id != null and id != ''">
+			and t0.id = ${order_id}
+		</if>
+		<if test="order_id != null and order_id != ''">
+			and t0.order_id like '%${order_id}%'
+		</if>
 		order by
 		t0.created_at asc
-		]]>
 	</select>
 
 	<!-- 实施查询速卖通站内信发送记录 -->
 	<select id="findMessageSentHistories" parameterType="Dto"
 		resultType="Dto">
 		SELECT
-			t0.ID as id,
-			t0.SOURCE as source,
-			t0.destination as destination,
-			t0.buyer_login_id as buyer_login_id,
-			t0.order_id as order_id,
-			t0.created_at as created_at
-			t0.order_status as order_status,
-			t1.name as seller
+		t0.ID as id,
+		t0.SOURCE as source,
+		t0.destination as destination,
+		t0.buyer_login_id as buyer_login_id,
+		t0.order_id as order_id,
+		t0.created_at as created_at
+		t0.order_status as order_status,
+		t1.name as
+		seller
 		FROM aliexpress_email_send_history
 		INNER JOIN (
-			select it0.id,
-			it0.name,
+		select it0.id,
+		it0.name,
 		FROM aliexpress_seller_account
 		) AS t1 ON t1.id = t0.seller_id
 
-        <if test="order_id != null and order_id != ''">
+		<if test="order_id != null and order_id != ''">
 			and t0.order_id like '%${order_id}%'
 		</if>
-		
+
 		<if test="seller_name != null and seller_name != ''">
 			and t1.name like '%${seller_name}%'
 		</if>
-		
+
 		order by
 		t0.created_at asc
 	</select>

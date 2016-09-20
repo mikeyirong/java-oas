@@ -49,7 +49,7 @@ public class AliexpressMessageController extends LoggingSupport {
 	@RequestMapping(value = "listMessageTemplate")
 	public void listMessageTemplate(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		Dto inDto = Dtos.newDto(request);
-		WebCxt.write(response, AOSJson.toGridJson(messageService.findMessageTemplate(inDto)));
+		WebCxt.write(response, AOSJson.toGridJson(messageService.findMessageTemplate(inDto), inDto.getPageTotal()));
 	}
 
 	/**
@@ -102,6 +102,6 @@ public class AliexpressMessageController extends LoggingSupport {
 	@RequestMapping("listAliexpressMessageQueue")
 	public void listAliexpressMessageQueue(HttpServletRequest request, HttpServletResponse response) {
 		Dto inDto = Dtos.newDto(request);
-		WebCxt.write(response, AOSJson.toGridJson(messageService.findMessageQueue(inDto)));
+		WebCxt.write(response, AOSJson.toGridJson(messageService.findMessageQueue(inDto), inDto.getPageTotal()));
 	}
 }
