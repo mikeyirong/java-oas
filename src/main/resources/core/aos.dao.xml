@@ -13,7 +13,7 @@
 
 	<description>DAO组件</description>
 
-	<context:property-placeholder location="file:${user.home}/jdbc.properties"
+	<context:property-placeholder location="file:${user.home}/jdbcN.properties"
 		ignore-unresolvable="false" />
 
 	<!-- 平台缺省 JDBC 数据源 -->
