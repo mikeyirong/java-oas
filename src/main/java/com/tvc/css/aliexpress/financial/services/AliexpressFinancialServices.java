@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.tvc.css.model.Aliexpressbill;
+
 import cn.osworks.aos.core.dao.SqlDao;
 import cn.osworks.aos.core.typewrap.Dto;
 import cn.osworks.aos.core.typewrap.Dtos;
@@ -121,5 +123,8 @@ public class AliexpressFinancialServices {
 	public Dto sendMessagelist(Dto inDto) {
 		sqlDao.insert("AliexpressMessageMapper.sendMessagelist", inDto);
 		return Dtos.newOutDto();
+	}
+	public void saveHistory(Aliexpressbill bill){
+		sqlDao.insert("AliexpressMessageMapper.hostoryMessage", bill.asDto());
 	}
 }

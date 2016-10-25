@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLEncoder;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +23,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -40,6 +43,7 @@ import com.tvc.css.model.Aliexpressbill;
 
 import cn.osworks.aos.core.asset.AOSJson;
 import cn.osworks.aos.core.asset.WebCxt;
+import cn.osworks.aos.core.dao.SqlDao;
 import cn.osworks.aos.core.typewrap.Dto;
 import cn.osworks.aos.core.typewrap.Dtos;
 
@@ -54,6 +58,7 @@ import cn.osworks.aos.core.typewrap.Dtos;
 public class AliexpressFinancialController extends LoggingSupport {
 	@Autowired
 	private AliexpressFinancialServices financilService;
+	private int number = 0;
 
 	@RequestMapping("financial")
 	public String init(HttpServletRequest request, HttpServletResponse response) {
@@ -86,12 +91,12 @@ public class AliexpressFinancialController extends LoggingSupport {
 			fileExit.mkdir();
 		}
 
-		String uuid = UUID.randomUUID().toString();
+		String uuid = new File(mfile.getOriginalFilename()).getName();
 		String filename = mfile.getOriginalFilename();
 		if (!filename.isEmpty()) {
 			InputStream in = mfile.getInputStream();
 			byte[] buf = new byte[1024];
-			path = path + "\\" + uuid + ".xls";
+			path = path + "\\" + uuid;// + ".xls";
 			File f = new File(path);
 			FileOutputStream out = new FileOutputStream(f);
 			// dto.put("path", path.replace("\\", "/"));
@@ -111,7 +116,9 @@ public class AliexpressFinancialController extends LoggingSupport {
 			dto.put("status", "0");
 		}
 		String datecontrol = dto.getString("date1");
+		String type = dto.getString("type");
 		logger.info("control date is-------->" + datecontrol);
+		dto.put("type", type);
 		dto.put("date", datecontrol);
 		dto.put("account", account);
 		dto.put("hostname", hostname);
@@ -241,83 +248,121 @@ public class AliexpressFinancialController extends LoggingSupport {
 		return (o == null || "null".equals(o)) || o.toString().trim().length() < 1;
 	}
 
+	private Aliexpressbill process(HSSFRow sheet1, String account) {
+		int columns = sheet1.getLastCellNum();
+		int number = 0;
+		Aliexpressbill bill = new Aliexpressbill();
+		if (sheet1 != null) {
+			Inner: for (int j = 0; j < columns; j++) {
+				Cell cell = sheet1.getCell(j);
+				if (cell != null && cell.getStringCellValue().startsWith("20")) {
+					number = number + 1;
+					String StartTime = cell.getStringCellValue(); // 起始时间
+					String type = sheet1.getCell(j + 1).getStringCellValue();// 业务类型
+					// 判断业务类型是否是中文
+					if (isChinese(type)) {
+						return null;
+					}
+					String information = sheet1.getCell(j + 2).getStringCellValue(); // 交易信息
+					HSSFCell emptyCell = sheet1.getCell(j + 3);
+					String moneyIn = emptyCell == null ? null : emptyCell.getStringCellValue(); // 入款
+
+					HSSFCell emptyCell3 = sheet1.getCell(j + 4);
+					String moneyOut = emptyCell3 == null ? null : emptyCell3.getStringCellValue();// 出款
+					HSSFCell emptyCell2 = sheet1.getCell(j + 5);
+					String balance = emptyCell2 == null ? null : emptyCell2.getStringCellValue(); // 余额
+					boolean Lawenforcers2 = false;
+					try {
+						sheet1.getCell(j + 7).getStringCellValue();
+					} catch (Exception e) {
+						Lawenforcers2 = true;
+					}
+					if (!Lawenforcers2) {
+						return null;
+					}
+					String str1 = StartTime + type + balance + moneyOut;
+					bill.setAccountLogId(str1.replace(" ", ""));
+					bill.setTradingInformation(information);
+					bill.setStoreAccount(account);
+					bill.setDate(StartTime);
+					bill.setBusinessType(type);
+					if (isEmpty(moneyIn)) {
+						bill.setDeposit("0");
+					} else {
+						bill.setDeposit((String) com.tvc.css.tool.ToMatcher.toMatcher(moneyIn).get(1).replace(" ", ""));
+					}
+					bill.setCurrency((String) com.tvc.css.tool.ToMatcher.toMatcher(balance).get(0));
+					if (isEmpty(moneyOut)) {
+						bill.setDispensing("0");
+					} else {
+						bill.setDispensing(
+								(String) com.tvc.css.tool.ToMatcher.toMatcher(moneyOut).get(1).replace(" ", ""));
+					}
+					bill.setBalance((String) com.tvc.css.tool.ToMatcher.toMatcher(balance).get(1).replace(" ", ""));
+					financilService.saveHistory(bill);
+					break Inner;
+				}
+			}
+		}
+		return bill;
+	}
+
 	/**
 	 * 解析excel表
 	 * 
 	 * @param file
 	 */
-	public boolean readExcel(File file, String account) {
-		int number = 0;
-		logger.info("发送消息--------->");
+	public boolean readExcel(File file, final String account) {
 		if (!file.exists()) {
 			return false;
 		}
+
+		final Function<List<Aliexpressbill>, Void> function = new Function<List<Aliexpressbill>, Void>() {
+			@Override
+			public Void apply(List<Aliexpressbill> pack) {
+				String url = "http://boss.test.dev/B2C/SyncAliAccountDetail";
+				String url1 = "http://admin.sjlpj.cn/B2C/SyncAliAccountDetail";
+				String js = JSON.toJSONString(pack);
+				logger.info("发送数据----------->" + pack.size());
+				logger.info("数据--------" + js);
+				logger.info("number" + number);
+				number += 1;
+				sendMessage(url, js);
+				return null;
+			}
+		};
+
 		try {
 			FileInputStream in = new FileInputStream(file);
 			BufferedInputStream bufer = new BufferedInputStream(in);
 			POIFSFileSystem fs = new POIFSFileSystem(bufer);
 			HSSFWorkbook wb = new HSSFWorkbook(fs);
-			HSSFSheet sheet = wb.getSheetAt(0);
-			int rows = sheet.getPhysicalNumberOfRows();
+			final HSSFSheet sheet = wb.getSheetAt(0);
+			final int rows = sheet.getPhysicalNumberOfRows();
+			List<Aliexpressbill> pack = new ArrayList<Aliexpressbill>();
 			for (int i = 0; i < rows; i++) {
-				logger.info("发送消息--------->");
-				HSSFRow sheet1 = sheet.getRow(i);
-				int columns = sheet1.getLastCellNum();
-				if (sheet1 != null) {
-					Inner: for (int j = 0; j < columns; j++) {
-						Cell cell = sheet1.getCell(j);
-						if (cell != null && cell.getStringCellValue().startsWith("20")) {
-							number = number + 1;
-							String StartTime = cell.getStringCellValue(); // 起始时间
-							String type = sheet1.getCell(j + 1).getStringCellValue();// 业务类型
-							// 判断业务类型是否是中文
-							if (isChinese(type)) {
-								return false;
-							}
-							String information = sheet1.getCell(j + 2).getStringCellValue(); // 交易信息
-							String moneyIn = sheet1.getCell(j + 3).getStringCellValue(); // 入款
-							String moneyOut = sheet1.getCell(j + 4).getStringCellValue(); // 出款
-							String balance = sheet1.getCell(j + 5).getStringCellValue(); // 余额
-							boolean Lawenforcers2 = false;
-							try {
-								sheet1.getCell(j + 7).getStringCellValue();
-							} catch (Exception e) {
-								Lawenforcers2 = true;
-							}
-							if (!Lawenforcers2) {
-								return false;
-							}
-							Aliexpressbill bill = new Aliexpressbill();
-							String str1 = StartTime + type + balance + moneyOut;
-							bill.setAccountLogId(str1);
-							bill.setTradingInformation(information);
-							bill.setStoreAccount(account);
-							bill.setDate(StartTime);
-							bill.setBusinessType(type);
-							if (isEmpty(moneyIn)) {
-								bill.setDeposit("0");
-							} else {
-								bill.setDeposit(
-										(String) com.tvc.css.tool.ToMatcher.toMatcher(moneyIn).get(1).replace(" ", ""));
-							}
-							bill.setCurrency((String) com.tvc.css.tool.ToMatcher.toMatcher(balance).get(0));
-							if (isEmpty(moneyOut)) {
-								bill.setDispensing("0");
-							} else {
-								bill.setDispensing((String) com.tvc.css.tool.ToMatcher.toMatcher(moneyOut).get(1)
-										.replace(" ", ""));
-							}
-							bill.setBalance(
-									(String) com.tvc.css.tool.ToMatcher.toMatcher(balance).get(1).replace(" ", ""));
-							String url1 = "http://admin.sjlpj.cn/B2C/SyncAliAccountDetail";
-							String js = JSON.toJSONString(bill);
-							logger.info("传送数据----》" + js);
-							sendMessage(url1, js);
-							break Inner;
-						}
-					}
+				HSSFRow row = sheet.getRow(i);
+				Aliexpressbill bill = process(row, account);
+				if (bill == null) {
+					return false;
+				}
+
+				if (bill.getAccountLogId() == null) {
+					continue;
+				}
+				pack.add(bill);
+
+				if (pack.size() >= 50) {
+					// do batch
+					function.apply(pack);
+					pack.clear();
 				}
 			}
+
+			if (!pack.isEmpty()) {
+				function.apply(pack);
+			}
+
 		} catch (FileNotFoundException e) {
 			logger.info("读取excel出错了" + e);
 			return false;
@@ -326,8 +371,8 @@ public class AliexpressFinancialController extends LoggingSupport {
 			return false;
 		} catch (Exception e) {
 			e.printStackTrace();
+			return false;
 		}
-		logger.info("number------->" + number);
 		return true;
 	}
 
@@ -380,5 +425,13 @@ public class AliexpressFinancialController extends LoggingSupport {
 	// 判断一个字符是否是中文
 	public static boolean isChinese(char c) {
 		return c >= 0x4E00 && c <= 0x9FA5;// 根据字节码判断
+	}
+	
+	/**
+	 * 
+	 */
+	
+	public String  readUrl(){
+		return null;
 	}
 }

@@ -1,5 +1,10 @@
 package com.tvc.css.model;
 
+import java.lang.reflect.Field;
+
+import cn.osworks.aos.core.typewrap.Dto;
+import cn.osworks.aos.core.typewrap.Dtos;
+
 /**
  * 
  * @author 阿里巴巴账单实体类
@@ -88,4 +93,17 @@ public class Aliexpressbill {
 		this.accountLogId = accountLogId;
 	}
 
+	public Dto asDto() {
+		Dto dto = Dtos.newDto();
+		try {
+			Field[] fields = this.getClass().getDeclaredFields();
+			for (Field field : fields) {
+				field.setAccessible(true);
+				dto.put(field.getName(), field.get(this));
+			}
+			return dto;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

@@ -43,7 +43,8 @@
 			<aos:column header="ID" dataIndex="id" hidden="true" />
 			<aos:column header="业务员" dataIndex="name" width="100" />
 			<aos:column header="店铺账号" dataIndex="account" width="100" />
-			<aos:column id="month_id" header="月份" dataIndex="date" width="100" />
+			<aos:column id="type" header="币种类型" dataIndex="type" width="100" />
+			<aos:column id="month_id" header="账单月份" dataIndex="date" width="100" />
 			<aos:column header="状态" dataIndex="status" width="100"
 				rendererFn="fn_status_format" />
 			<aos:column header="创建时间" dataIndex="create_at" width="100" />
@@ -53,7 +54,7 @@
 		</aos:gridpanel>
 
 		<aos:window id="storeWindow" title="新增上传记录" layout="fit"
-			closable="true" width="500" height="160">
+			closable="true" width="500" height="200">
 			<aos:formpanel id="storeForm" title="">
 				<aos:hiddenfield id="storeId" name="id" />
 				<aos:combobox id="myaccount" name="myaccount" fieldLabel="我的店铺"
@@ -63,6 +64,10 @@
 					disabled="false" />
 				<aos:filefield id="excel" name="excel" fieldLabel="上传excel文件"
 					width="400"></aos:filefield>
+				<aos:combobox id ="mtype" name="mtype" fieldLabel="类型">
+					<aos:option value="人民币" display="人民币账户" />
+					<aos:option value="美元" display="美元账户" />
+				</aos:combobox>
 				<aos:docked dock="bottom" ui="footer" margin="0 0 8 0">
 					<aos:dockeditem xtype="tbfill" />
 					<aos:dockeditem xtype="button" text="保存"
@@ -109,14 +114,16 @@
 					+ '">点击下载</a>';
 			return html;
 		}
-		
+
 		function fn_status_format(value, metaData, record, rowIndex, colIndex,
 				store) {
-			switch(record.data.status){
-			    case "1":return "<span class=\"badge\" style=\"color:  #CD0000\">已发送</span>";
-			    case "0":return "<span class=\"badge\" style=\"color:  #8DEEEE\">未发送</span>";
+			switch (record.data.status) {
+			case "1":
+				return "<span class=\"badge\" style=\"color:  #CD0000\">已发送</span>";
+			case "0":
+				return "<span class=\"badge\" style=\"color:  #8DEEEE\">未发送</span>";
 			}
-			
+
 		}
 
 		/**
@@ -144,7 +151,7 @@
 		function save_excel_message() {
 			var date = date1.getValue();
 			var account = myaccount.getValue();
-			if (account == "") {
+			if (account == "" || account == null) {
 				AOS.err("店铺名不能为空");
 				return;
 			}
@@ -153,11 +160,16 @@
 				AOS.err("上传文件格式不符合");
 				return;
 			}
+			var typeB = mtype.getValue();
+			if (typeB == "" || typeB == null) {
+				AOS.err("账户类型不能为空");
+				return;
+			}
 			var form = storeForm.getForm();
 			AOS.wait();
 			form.submit({
 				url : 'file_uploading.jhtml?date1=' + date + "&account="
-						+ account,
+						+ account+"&type="+typeB,
 				type : 'POST',
 				success : function(fmt, body) {
 					AOS.tip("保存成功!");

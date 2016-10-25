@@ -9,6 +9,7 @@
 		SELECT
 		t0.ID as id,
 		t0.HOSTNAME as name,
+		t0.TYPE as type,
 		t0.DATE as date,
 		t0.STATUS as status,
 		t0.CREATE_AT as create_at,
@@ -35,6 +36,7 @@
 		SELECT
 		t0.ID as id,
 		t0.HOSTNAME as name,
+		t0.TYPE as type,
 		t0.DATE as date,
 		t0.STATUS as status,
 		t0.CREATE_AT as create_at,
@@ -58,20 +60,21 @@
 	<!--查询对应业务员下的店铺 -->
 	<select id="accountSelect" parameterType="Dto" resultType="Dto">
 		<![CDATA[
-		  SELECT ACCOUNT as display,ACCOUNT as value FROM aliexpress_shop WHERE host = #{host} 
+		  SELECT NAME as display,ACCOUNT as value FROM aliexpress_shop WHERE host = #{host} 
 		]]>
 	</select>
 	<!--查询是否有重复记录 -->
 	<select id="selectExcelMessage" parameterType="Dto" resultType="Dto">
-	      SELECT HOSTNAME as hostname,PATH as path FROM aliexpress_financial WHERE account = #{account} AND date=#{date}
+	      SELECT HOSTNAME as hostname,PATH as path FROM aliexpress_financial WHERE account = #{account} AND type= #{type} AND date=#{date}
 	</select>
 	<!-- 新增导入财务excel表记录 -->
 	<insert id="saveExcelMessage" parameterType="Dto">
 		<![CDATA[
 		  INSERT INTO aliexpress_financial
-		     (HOSTNAME,ACCOUNT,STATUS,DATE,PATH,CREATE_AT) VALUES (
+		     (HOSTNAME,ACCOUNT,TYPE,STATUS,DATE,PATH,CREATE_AT) VALUES (
 		     #{hostname,jdbcType=VARCHAR},
 		     #{account,jdbcType=VARCHAR},
+		     #{type,jdbcType=VARCHAR},
 		     #{status,jdbcType=VARCHAR},
 		     #{date,jdbcType=VARCHAR},
 		     #{path,jdbcType=VARCHAR},
@@ -103,4 +106,19 @@
 	       WHERE account= #{account} AND date = #{date}   
 	]]>
 	</update>
+	<!-- 向数据存入推送数据的记录 -->
+	<insert id="hostoryMessage" parameterType="Dto">
+	    INSERT INTO aliexpress_financial_history
+		     (ACCOUNTLOGID,STOREACCOUNT,DATE,CURRENCY,TRADINGINFORMATION,BUSINESSTYPE,DISPENSING,BALANCE,DEPOSIT) VALUES (
+		     #{accountLogId,jdbcType=VARCHAR},
+		     #{storeAccount,jdbcType=VARCHAR},    
+		     #{date,jdbcType=VARCHAR}, 
+		     #{currency,jdbcType=VARCHAR}, 
+		     #{tradingInformation,jdbcType=VARCHAR}, 
+		     #{businessType,jdbcType=VARCHAR}, 
+		     #{dispensing,jdbcType=VARCHAR}, 
+		     #{balance,jdbcType=VARCHAR},  
+		     #{deposit,jdbcType=VARCHAR}
+		   )
+	</insert>
 </mapper>

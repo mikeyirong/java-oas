@@ -42,6 +42,7 @@
 			<aos:column header="ID" dataIndex="id" hidden="true" />
 			<aos:column header="业务员" dataIndex="name" width="100" />
 			<aos:column header="店铺账号" dataIndex="account" width="100" />
+			<aos:column id="type" header="类型" dataIndex="type" width="100" />
 			<aos:column header="月份" dataIndex="date" width="100" />
 			<aos:column header="状态" dataIndex="status" width="100"
 				rendererFn="fn_status_format" />
